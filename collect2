@@ -1,0 +1,33 @@
+#!/bin/bash
+mkdir "results"
+for i in *.dve;
+do
+	RES="./results/$i-res"
+	echo $RES
+	rm -rf $RES
+	mkdir $RES
+	echo "$i > $RES"
+	cd $RES
+	../../../divine compile -l ../../$i
+	t="2C"
+	MODEL=$RES/$i$t
+	echo $MODEL
+	cd ../..
+	../htest $MODEL  > $RES/$i.csv
+	TIME=$RES/$i.times.out
+	for j in `seq 1 3`;
+	do
+		OUT=$RES/$i.$j.out
+		POROUT=$RES/$i.por.$j.out
+		../dve2lts-mc $MODEL --threads=1 &> $OUT
+		../dve2lts-mc $MODEL --por --threads=1 &> $POROUT
+
+		echo "$i.$j:" >> $TIME
+		cat $OUT | grep "exploration time" | awk '{split($0,a," "); print a[7]}' >>$TIME
+
+		echo "$i.$j.por:" >>$TIME
+		cat $POROUT | grep "exploration time" | awk '{split($0,a," "); print a[7]}' >>$TIME
+
+		echo "$j"
+	done
+done
